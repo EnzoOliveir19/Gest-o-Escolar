@@ -1,0 +1,4 @@
+admin;123;admin
+jhonatan;123456;Coordenador
+carlos;123456;Professor
+Renato;123456;Professor
