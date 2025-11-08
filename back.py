@@ -1,5 +1,6 @@
 import random
 import os
+import string
 from tkinter import messagebox, simpledialog, PhotoImage
 
 # FUNCOES DE LOGIN, AUTENTICACAO 
@@ -431,3 +432,179 @@ def editar_aluno2():
 
     sucesso, mensagem = editar_aluno(nome_antigo, novo_nome, nova_senha, nova_data, novo_cpf, novo_email, novo_endereco, novo_ra)
     messagebox.showinfo("Resultado da Edição", mensagem)
+
+
+########### GERENCIAMENTO DE TURMAS
+def listar_turmas():
+    turmas = []
+    if not os.path.exists("turmas.txt"):
+        return turmas
+
+    with open("turmas.txt", "r", encoding="utf-8") as f:
+        for linha in f:
+            partes = linha.strip().split(";")
+
+            nome = partes[0]
+            professor = partes[1].replace("professor=", "")
+            alunos = partes[2].replace("alunos=", "")
+
+            limite = 0
+            if len(partes) > 3:
+                limite = partes[3].replace("limite=", "")
+
+            turmas.append({
+                "nome": nome,
+                "professor": professor,
+                "alunos": int(alunos) if alunos.isdigit() else 0,
+                "limite": int(limite) if str(limite).isdigit() else 0
+            })
+
+    return turmas
+
+
+def salvar_turmas(turmas):
+    with open("turmas.txt", "w", encoding="utf-8") as f:
+        for t in turmas:
+            alunos_str = ",".join(t.get("lista", []))  
+            f.write(f"{t['nome']};{t['professor']};{t['limite']};{alunos_str}\n")
+
+
+def criar_turma(nome, professor, limite):
+    if not nome or not professor or not limite:
+        messagebox.showwarning("Aviso", "Preencha todos os campos!")
+        return
+
+    try:
+        limite = int(limite)
+    except:
+        messagebox.showwarning("Aviso", "O limite deve ser um número.")
+        return
+
+    with open("turmas.txt", "a", encoding="utf-8") as f:
+        f.write(f"{nome};{professor};{limite};\n")
+
+    messagebox.showinfo("Sucesso", f"Turma '{nome}' criada com sucesso!")
+
+
+def adicionar_aluno_turma_ui(lista_turmas, atualizar_lista):
+    indice = lista_turmas.curselection()
+    if not indice:
+        messagebox.showwarning("Aviso", "Selecione uma turma.")
+        return
+    turmas = listar_turmas()
+    turma = turmas[indice[0]]
+
+    alunos = alunos.txt
+    nomes = [a['nome'] for a in alunos]
+
+    aluno_nome = simpledialog.askstring("Adicionar Aluno", f"Digite o nome do aluno:\nDisponíveis: {', '.join(nomes)}")
+
+    aluno = next((a for a in alunos if a['nome'] == aluno_nome), None)
+    if not aluno:
+        messagebox.showerror("Erro", "Aluno não encontrado.")
+        return
+
+    if len(turma["lista"]) >= turma["limite"]:
+        messagebox.showwarning("Aviso", "Turma já está no limite de alunos.")
+        return
+
+    turma["lista"].append(aluno["ra"])
+    salvar_turmas(turmas)
+    messagebox.showinfo("Sucesso", f"Aluno '{aluno_nome}' adicionado!")
+    atualizar_lista()
+
+
+def remover_aluno_turma_ui(lista_turmas, atualizar_lista):
+    indice = lista_turmas.curselection()
+    if not indice:
+        messagebox.showwarning("Aviso", "Selecione uma turma.")
+        return
+
+    turmas = listar_turmas()
+    turma = turmas[indice[0]]
+
+    if not turma["lista"]:
+        messagebox.showinfo("Info", "Nenhum aluno para remover.")
+        return
+
+    aluno_ra = simpledialog.askstring("Remover Aluno", f"RAs atuais: {', '.join(turma['lista'])}\nDigite o RA para remover:")
+    if aluno_ra not in turma["lista"]:
+        messagebox.showerror("Erro", "RA não encontrado nesta turma.")
+        return
+
+    turma["lista"].remove(aluno_ra)
+    salvar_turmas(turmas)
+    messagebox.showinfo("Sucesso", f"Aluno RA {aluno_ra} removido!")
+    atualizar_lista()
+
+    return turmas
+
+def listar_professores():
+    """Lê o arquivo usuarios.txt e retorna apenas os professores"""
+    professores = []
+    try:
+        with open("usuarios.txt", "r", encoding="utf-8") as arquivo:
+            for linha in arquivo:
+                partes = linha.strip().split(";")
+                if len(partes) == 3:
+                    nome, senha, cargo = partes
+                    if cargo.strip().lower() == "professor":
+                        professores.append(nome.strip())
+    except FileNotFoundError:
+        messagebox.showerror("Erro", "Arquivo de usuários não encontrado.")
+    return professores
+
+def listar_alunos():
+    """Lê o arquivo alunos.txt e retorna a lista de alunos"""
+    alunos = []
+    try:
+        with open("alunos.txt", "r", encoding="utf-8") as arquivo:
+            for linha in arquivo:
+                partes = linha.strip().split(";")
+                if len(partes) == 7:
+                    alunos.append({
+                        "nome": partes[0],
+                        "ra": partes[6]
+                    })
+    except FileNotFoundError:
+        messagebox.showerror("Erro", "Arquivo de alunos não encontrado.")
+    return alunos
+
+def aluno_em_turma(ra_aluno):
+    """Verifica se o aluno já pertence a alguma turma"""
+    turmas = listar_turmas()
+    for turma in turmas:
+        if ra_aluno in turma["lista"]:
+            return True
+    return False
+
+
+def criar_turma_auto(professor, alunos_selecionados, limite=30):
+    """Cria automaticamente turmas com nomes sequenciais (1A, 1B, 1C...)"""
+    turmas = listar_turmas()
+
+    # Gera nome automático (1A, 1B, 1C...)
+    prefixo = "1"
+    sufixo = chr(65 + len(turmas))  # A, B, C, ...
+    nome_turma = f"{prefixo}{sufixo}"
+
+    nova_turma = {
+        "nome": nome_turma,
+        "professor": professor,
+        "limite": limite,
+        "lista": [a["ra"] for a in alunos_selecionados]
+    }
+
+    turmas.append(nova_turma)
+    salvar_turmas(turmas)
+    messagebox.showinfo("Sucesso", f"Turma '{nome_turma}' criada com sucesso!")
+
+    return nova_turma
+
+
+def excluir_turma(nome_turma):
+    """Remove uma turma pelo nome"""
+    turmas = listar_turmas()
+    novas_turmas = [t for t in turmas if t["nome"] != nome_turma]
+    salvar_turmas(novas_turmas)
+    messagebox.showinfo("Sucesso", f"Turma '{nome_turma}' removida com sucesso!")
