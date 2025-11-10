@@ -1,2 +1,1 @@
-1A;carlos;0;
-1B;carlos;30;1168,3538
+1A;carlos;30;3538
