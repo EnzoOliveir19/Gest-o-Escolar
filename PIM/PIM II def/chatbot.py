@@ -7,7 +7,7 @@ import unicodedata # Para formatação da pergunta
 from fuzzywuzzy import fuzz # PAra matching nas perguntas
 
 # Configurações do chatbot
-genai_key = "AIzaSyAocryQ0T-1GGLQRuTpEa5hBUfixJBzVU0" # "Chave API aqui"
+genai_key = "" # "Chave API aqui"
 genai.configure(api_key=genai_key)
 
 # Base de conhecimento: Respostas pré estabelecidas com listas de palavras-chave
